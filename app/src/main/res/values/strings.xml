@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Popular Movies</string>
+
+    <string name="detail_activity_name">Movie Detail</string>
+
+    <string name="apiListUrl">"https://api.themoviedb.org/3/movie/%s?page=%d&amp;language=en-US&amp;api_key=%s</string>
+
+    <string name="trailersListUrl">"http://api.themoviedb.org/3/movie/%s/videos?api_key=%s</string>
+
+    <string name="reviewsListUrl">"http://api.themoviedb.org/3/movie/%s/reviews?api_key=%s</string>
+
+    <string name="posterURL">http://image.tmdb.org/t/p/w185/%s</string>
+
+    <string name="list_prompt">Choose a List</string>
+
+    <string-array name="list_choices">
+        <item>Popular</item>
+        <item>Top Rated</item>
+        <item>Favorites</item>
+    </string-array>
+
+</resources>
