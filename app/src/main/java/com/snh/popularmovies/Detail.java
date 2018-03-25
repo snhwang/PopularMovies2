@@ -131,13 +131,15 @@ public class Detail extends AppCompatActivity {
         releaseDate.setText("Release Date: " + movie.releaseDate);
         voteAverage.setText("Vote Average: " + movie.voteAverage);
         overview.setText(movie.overview);
+        displayReviews();
+        displayTrailers();
     }
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
         savedInstanceState.putParcelableArrayList(STATE_REVIEWS, new ArrayList<>(reviews));
         savedInstanceState.putParcelableArrayList(STATE_TRAILERS, new ArrayList<>(trailers));
-        super.onSaveInstanceState(savedInstanceState);
     }
 
     @Override
@@ -156,7 +158,6 @@ public class Detail extends AppCompatActivity {
         DividerItemDecoration mDividerItemDecoration = new DividerItemDecoration(reviewsView.getContext(),
                 mLayoutManager.getOrientation());
         reviewsView.addItemDecoration(mDividerItemDecoration);
-
         reviewsView.setItemAnimator(new DefaultItemAnimator());
         reviewsView.setAdapter(reviewAdapter);
         reviewAdapter.setOnReviewClickListener(new OnReviewClickListener() {

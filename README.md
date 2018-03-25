@@ -29,7 +29,7 @@ The following libraries were included as shown from this excerpt from build.grad
     implementation 'com.android.support:recyclerview-v7:26.1.0'
 ```
 
-Picasso is a library with functions for displaying images on the basis of urls. The library okhttp was useful for downloading data from TBDb. The library okio is required by okhttp. I used the room persistence library to facilitate database operations. A content provider was also implemented to potentially allow access from other apps although no specific external applications have been identified at the this time for this functionality.
+Picasso is a library with functions for displaying images on the basis of urls. The library okhttp was useful for downloading data from TBDb. The library okio is required by okhttp.
 
 I found assistance from multiple sources, including the Udacity course material and stackoverflow. I commented in the code at the sites where I relied most heavily on outside code. If I forgot to give credit for any significant adaptation of code, please let me know.
 

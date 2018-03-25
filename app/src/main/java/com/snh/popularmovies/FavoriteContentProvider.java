@@ -20,7 +20,6 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.text.TextUtils;
-import android.util.Log;
 
 import static com.snh.popularmovies.FavoritesSqlHelper.FavoritesEntry.COLUMN_NAME_TITLE;
 import static com.snh.popularmovies.FavoritesSqlHelper.FavoritesEntry.TABLE_NAME;
@@ -67,7 +66,6 @@ public class FavoriteContentProvider extends ContentProvider {
         SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
         qb.setTables(TABLE_NAME);
 
-        Log.d("FavoriteContentProvider", "query entry");
         db = dbHelper.getWritableDatabase();
 
         switch(uriMatcher.match(uri)) {
@@ -124,9 +122,7 @@ public class FavoriteContentProvider extends ContentProvider {
                 if (context == null) {
                     return null;
                 }
-                Log.d("insert", values.toString());
                 long id = db.insert(TABLE_NAME, "", values);
-                Log.d("insert", String.valueOf(id));
                 if (id > 0) {
                     Uri _uri = ContentUris.withAppendedId(URI_FAVORITES, id);
                     context.getContentResolver().notifyChange(_uri, null);
@@ -208,7 +204,6 @@ public class FavoriteContentProvider extends ContentProvider {
 
     // Required implementation of ContentProvider.onCreate()
     public boolean onCreate() {
-        Log.d("FavoriteContenProvider", "onCreate");
         dbHelper = new FavoritesSqlHelper(getContext());
         return true;
     }

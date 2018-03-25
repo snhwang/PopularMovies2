@@ -1,8 +1,5 @@
 package com.snh.popularmovies;
 
-import android.arch.persistence.room.ColumnInfo;
-import android.arch.persistence.room.Entity;
-import android.arch.persistence.room.Ignore;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -18,7 +15,6 @@ import org.json.JSONObject;
  * Created by snhwa on 12/11/2017.
  */
 
-@Entity(tableName = Movie.TABLE_NAME)
 public class Movie implements Parcelable {
 
     public static final String TABLE_NAME = "favorites";
@@ -28,25 +24,18 @@ public class Movie implements Parcelable {
     public static final String COLUMN_TITLE = "title";
 
 //    @PrimaryKey
-    @ColumnInfo(index = true, name = COLUMN_ID)
     long id;
 
-    @ColumnInfo(name = "title")
     String title;
 
-    @ColumnInfo(name = "posterUrl")
     String posterUrl;
 
-    @ColumnInfo(name = "releaseDate")
     String releaseDate;
 
-    @ColumnInfo(name = "overview")
     String overview;
 
-    @ColumnInfo(name = "voteAverage")
     String voteAverage;
 
-    @ColumnInfo(name = "favorited")
     Boolean favorited;
 
     public Movie(long id, String title, String posterUrl, String releaseDate, String overview, String voteAverage) {
@@ -59,7 +48,6 @@ public class Movie implements Parcelable {
         this.favorited = false;
     }
 
-    @Ignore
     public Movie(Context mContext, JSONObject movieData) {
         try {
             posterUrl = mContext.getString(R.string.posterURL, movieData.getString("poster_path"));
@@ -74,7 +62,6 @@ public class Movie implements Parcelable {
         }
     }
 
-    @Ignore
     public Movie(Cursor cursor) {
         try {
             int idCol = cursor.getColumnIndexOrThrow(COLUMN_ID);
@@ -96,7 +83,6 @@ public class Movie implements Parcelable {
         }
     }
 
-    @Ignore
     public Movie() {
     }
 

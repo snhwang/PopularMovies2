@@ -7,7 +7,6 @@ import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.BaseColumns;
-import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -72,7 +71,6 @@ in the future. For example, adding movies from other sources.
             "DROP TABLE IF EXISTS " + FavoritesEntry.TABLE_NAME;
 
     public void onCreate(SQLiteDatabase db) {
-        Log.d("FavoriesSqlHelper", SQL_CREATE_ENTRIES);
         db.execSQL(SQL_CREATE_ENTRIES);
     }
 

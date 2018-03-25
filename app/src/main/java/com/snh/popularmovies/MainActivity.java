@@ -11,7 +11,6 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
@@ -29,6 +28,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.OkHttpClient;
@@ -38,14 +39,13 @@ import okhttp3.Response;
 public class MainActivity extends AppCompatActivity {
 
     private static final String API_KEY = BuildConfig.API_KEY;
-    private Spinner spinner1, spinner2;
-    private Button btnNext, btnPrevious, btnFirst;
     private String listChoice;
     static final String STATE_LIST_CHOICE = "listChoice";
     static final String STATE_LIST_PAGE = "page";
     static final String STATE_SCROLL_POSITION = "scrollPosition";
     private int page;
-    static final String STATE_MAIN_LAYOUT = "mainLayout";
+    private int gridIndex;
+
     List<Movie> movies = new ArrayList<>();
     List<Movie> favorites = new ArrayList<>();
 
@@ -53,11 +53,18 @@ public class MainActivity extends AppCompatActivity {
 
     private SharedPreferences prefs;
 
+    @BindView(R.id.spinner1) Spinner spinner1;
+    @BindView(R.id.gridView) GridView gridView;
+    @BindView(R.id.pageNum) TextView pageNum;
+    @BindView(R.id.btnFirst) Button btnFirst;
+    @BindView(R.id.btnNext) Button btnNext;
+    @BindView(R.id.btnPrevious) Button btnPrevious;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d("onCreate", "entry");
         setContentView(R.layout.activity_main);
+        ButterKnife.bind(this);
         addListenersToPageButtons();
         addListenerToListSelector();
     }
@@ -66,8 +73,7 @@ public class MainActivity extends AppCompatActivity {
     public void onSaveInstanceState(Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
         savedInstanceState.putString(STATE_LIST_CHOICE, listChoice);
-        GridView gridView = findViewById(R.id.gridView);
-        Log.d("nSaveInstanceState", String.valueOf(gridView.getFirstVisiblePosition()));
+        savedInstanceState.putInt(STATE_LIST_PAGE, page);
         savedInstanceState.putInt(STATE_SCROLL_POSITION, gridView.getFirstVisiblePosition());
     }
 
@@ -75,15 +81,11 @@ public class MainActivity extends AppCompatActivity {
     public void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         listChoice = savedInstanceState.getString(STATE_LIST_CHOICE);
-        // start loader to read stored favorites
+        page = savedInstanceState.getInt(STATE_LIST_PAGE, 1);
+        pageNum.setText(String.valueOf(page));        // start loader to read stored favorites
         getSupportLoaderManager().initLoader(FAVORITES_LOADER, null, loaderCallbacks);
-        int index = savedInstanceState.getInt(STATE_SCROLL_POSITION);
-        Log.d("onRestore index", String.valueOf(index));
-        GridView gridView = findViewById(R.id.gridView);
-        gridView.smoothScrollToPositionFromTop(10, 0, 15);
-        gridView.setSelection(index);
-        Log.d("index after scroll", String.valueOf(gridView.getFirstVisiblePosition()));
-//        updateGrid();
+        gridIndex = savedInstanceState.getInt(STATE_SCROLL_POSITION, 0);
+        gridView.setSelection(gridIndex);
     }
 
     @Override
@@ -93,8 +95,6 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(STATE_LIST_CHOICE, listChoice);
         editor.putInt(STATE_LIST_PAGE, page);
-        GridView gridView = findViewById(R.id.gridView);
-        Log.d("onPause", String.valueOf(gridView.getFirstVisiblePosition()));
         editor.putInt(STATE_SCROLL_POSITION, gridView.getFirstVisiblePosition());
         editor.clear();
         editor.apply();
@@ -105,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         prefs =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         listChoice = prefs.getString(STATE_LIST_CHOICE, "Popular");
-        spinner1 = findViewById(R.id.spinner1);
+
         switch(listChoice) {
             case "Popular":
                 spinner1.setSelection(0);
@@ -119,38 +119,33 @@ public class MainActivity extends AppCompatActivity {
             default:
                 spinner1.setSelection(0);
         }
+
         page = prefs.getInt(STATE_LIST_PAGE, 1);
-        TextView pageNum = findViewById(R.id.pageNum);
         pageNum.setText(String.valueOf(page));
-
-        Log.d("onResume", "before load");
         getSupportLoaderManager().restartLoader(FAVORITES_LOADER, null, loaderCallbacks);
-        Log.d("onResume", "after load");
-
-        //if (!"Favorites".equals(listChoice)) updateGrid();
-        Log.d("onResume", "end");
-        int index = prefs.getInt(STATE_SCROLL_POSITION, 0);
-        Log.d("onResume index", String.valueOf(index));
-        GridView gridView = findViewById(R.id.gridView);
-        gridView.smoothScrollToPositionFromTop(10,0, 15);
-        gridView.setSelection(index);
-        Log.d("index after scroll", String.valueOf(gridView.getFirstVisiblePosition()));
-
+        gridIndex = prefs.getInt(STATE_SCROLL_POSITION, 0);
+        gridView.setSelection(gridIndex);
     }
 
     public void addListenerToListSelector() {
-        spinner1 = findViewById(R.id.spinner1);
         spinner1.setOnItemSelectedListener(new listSelectorListener());
     }
 
     public class listSelectorListener implements OnItemSelectedListener {
-
         public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-            listChoice = parent.getItemAtPosition(pos).toString();
+            String temp = parent.getItemAtPosition(pos).toString();
+            if (!temp.equals(listChoice)) {
+                gridIndex = 0;
+                page = 1;
+            }
+            listChoice = temp;
             if ("Favorites".equals(listChoice)) {
                 getSupportLoaderManager().restartLoader(FAVORITES_LOADER, null, loaderCallbacks);
             }
-            else updateGrid();
+            else {
+                updateGrid();
+                gridView.setSelection(gridIndex);
+            }
         }
         @Override
         public void onNothingSelected(AdapterView<?> arg0) {
@@ -160,12 +155,7 @@ public class MainActivity extends AppCompatActivity {
 
     // Listeners for the the "Next" and "Previous" page buttons
     public void addListenersToPageButtons() {
-        btnFirst = findViewById(R.id.btnFirst);
-        btnNext = findViewById(R.id.btnNext);
-        btnPrevious = findViewById(R.id.btnPrevious);
-
         btnFirst.setOnClickListener(new View.OnClickListener() {
-
             @Override
             public void onClick(View v) {
                 page = 1;
@@ -196,7 +186,6 @@ public class MainActivity extends AppCompatActivity {
 
     // Update the displayed grid of movie posters
     private void updateGrid() {
-        Log.d("updateGrid", "entry");
         if (!"Favorites".equals(listChoice)) {
             String listName;
             if ("Top Rated".equals(listChoice)) {
@@ -205,7 +194,6 @@ public class MainActivity extends AppCompatActivity {
             else {
                 listName = "popular";
             }
-            TextView pageNum = findViewById(R.id.pageNum);
             pageNum.setText(String.valueOf(page));
 
             if (Utils.isOnline(MainActivity.this)) {
@@ -225,7 +213,6 @@ public class MainActivity extends AppCompatActivity {
     // Store the data retrieved from the movie database in a Movie arraylist
     // and display the movie posters in the grid.
     public void processMovieData(String response) {
-        Log.d("processMovieData", "entry");
         JSONObject data=null;
         try {
             data = new JSONObject(response);
@@ -237,14 +224,13 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; posters != null && i < posters.length(); i++) {
             try {
                 movies.add(new Movie(MainActivity.this, posters.getJSONObject(i)));
-                Log.d("processMovieData", movies.get(i).title);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         }
-        GridView gridview = findViewById(R.id.gridView);
-        gridview.setAdapter(new MoviesToGridImageAdapter(this, movies));
-        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        gridView.setAdapter(new MoviesToGridImageAdapter(this, movies));
+        gridView.setSelection(gridIndex);
+        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView<?> parent, View v,
                                     int position, long id) {
                 Class destinationActivity = Detail.class;
@@ -268,7 +254,6 @@ Adapted from:
 https://www.journaldev.com/13629/okhttp-android-example-tutorial#synchronous-vs-asynchronous-calls
 */
     void getMovieData(String url) throws IOException {
-        Log.d("getMovieData", "entry");
         OkHttpClient client = new OkHttpClient();
         Request request = new Request.Builder()
                 .url(url)
@@ -288,7 +273,6 @@ https://www.journaldev.com/13629/okhttp-android-example-tutorial#synchronous-vs-
                 MainActivity.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Log.d("getMovieData", "run");
                         processMovieData(myResponse);
                     }
                 });
@@ -300,9 +284,7 @@ https://www.journaldev.com/13629/okhttp-android-example-tutorial#synchronous-vs-
            loaderCallbacks = new LoaderManager.LoaderCallbacks<Cursor>() {
         @Override
         public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-            Log.d("LoaderManager", "onCreateLoader entry");
             if (id == FAVORITES_LOADER) {
-                Log.d("LoaderManager", "onCreateLoader");
                 return new CursorLoader(
                         getApplicationContext(),
                         FavoriteContentProvider.URI_FAVORITES,
@@ -328,9 +310,8 @@ https://www.journaldev.com/13629/okhttp-android-example-tutorial#synchronous-vs-
                         movieCursor.moveToNext();
                     }
                     if ("Favorites".equals(listChoice)) {
-                        GridView gridview = findViewById(R.id.gridView);
-                        gridview.setAdapter(new MoviesToGridImageAdapter(MainActivity.this, favorites));
-                        gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        gridView.setAdapter(new MoviesToGridImageAdapter(MainActivity.this, favorites));
+                        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                             public void onItemClick(AdapterView<?> parent, View v,
                                                     int position, long id) {
                                 Class destinationActivity = Detail.class;
@@ -342,6 +323,7 @@ https://www.journaldev.com/13629/okhttp-android-example-tutorial#synchronous-vs-
                             }
                         });
                     }
+                    gridView.setSelection(gridIndex);
                     break;
             }
         }
